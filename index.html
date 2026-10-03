@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charming Mini-Games Arcade</title>
+    <style>
+        :root {
+            --bg-primary: #0f1020;
+            --bg-card: rgba(255, 255, 255, 0.04);
+            --border-glass: rgba(255, 255, 255, 0.1);
+            --accent-pink: #ff477e;
+            --accent-cyan: #00f2fe;
+            --accent-gold: #ffd700;
+            --text-main: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(circle at center, #1b1c3a 0%, var(--bg-primary) 100%);
+            color: var(--text-main);
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            min-height: 85vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            max-width: 620px;
+            padding: 25px;
+            box-sizing: border-box;
+            flex-direction: column;
+            align-items: center;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+        .active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .arcade-card, form {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-glass);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 320px;
+            box-sizing: border-box;
+            text-align: left;
+        }
+        
+        h2 { margin-top: 0; font-weight: 600; letter-spacing: 0.5px; font-size: 19px; }
+        label { font-size: 14px; color: #a0aec0; font-weight: 500; }
+        
+        input, select {
+            width: 100%;
+            padding: 10px 12px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-glass);
+            background: rgba(0, 0, 0, 0.2);
+            color: white;
+            font-size: 15px;
+            box-sizing: border-box;
+            outline: none;
+            transition: 0.3s;
+        }
+        input:focus, select:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0,242,254,0.3);
+        }
+        select option { background: #1a1a2e; color: white; }
+
+        input[type="submit"] {
+            display: block;
+            width: 100%;
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            color: white;
+            border: none;
+            padding: 12px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            box-shadow: 0 5px 15px rgba(255, 65, 108, 0.4);
+            transition: 0.3s;
+            margin-top: 5px;
+            margin-bottom: 0;
+        }
+
+        input[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 65, 108, 0.6);
+        }
+
+        /* --- 10-SECOND STATION WALKING AI VIDEO PREVIEW --- */
+        #aiVideoPreviewContainer {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .ai-video-box {
+            position: relative;
+            width: 100%;
+            height: 150px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid var(--accent-cyan);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+            background: #000;
+        }
+        .ai-video-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            animation: stationWalkingZoom 10s ease-in-out infinite;
+        }
+        @keyframes stationWalkingZoom {
+            0% { transform: scale(1) translate(0px, 0px); filter: brightness(1); }
+            50% { transform: scale(1.2) translate(-2px, -4px); filter: brightness(1.1); }
+            100% { transform: scale(1) translate(0px, 0px); filter: brightness(1); }
+        }
+        .station-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(0,242,254,0.1), transparent 50%, rgba(0,0,0,0.3));
+            pointer-events: none;
+        }
+        .ai-badge {
+            position: absolute;
+            top: 6px; right: 6px;
+            background: rgba(0, 0, 0, 0.75);
+            border: 1px solid var(--accent-cyan);
+            padding: 2px 8px;
+            font-size: 10px;
+            color: var(--accent-cyan);
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+        }
+        .station-timer-bar {
+            position: absolute;
+            bottom: 0; left: 0;
+            height: 3px;
+            background: var(--accent-cyan);
+            width: 100%;
+            animation: timerShrink 10s linear infinite;
+        }
+        @keyframes timerShrink {
+            0% { width: 100%; }
+            100% { width: 0%; }
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid var(--border-glass);
+            padding: 10px 20px;
+            font-size: 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 15px;
+        }
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .puzzle-status-badge {
+            background: rgba(0, 242, 254, 0.12);
+            border: 1px solid rgba(0, 242, 254, 0.4);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: inline-block;
+            color: var(--accent-cyan);
+            box-shadow: 0 0 12px rgba(0, 242, 254, 0.2);
+        }
+
+        .game-frame {
+            position: relative;
+            width: 100%;
+            height: 350px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 12px;
+            margin: 5px 0;
+            overflow: hidden;
+            border: 1px solid var(--border-glass);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Game 2: Memory Matrix */
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 75px);
+            gap: 10px;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        .m-cell {
+            width: 75px;
+            height: 75px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+            border: 1px solid var(--border-glass);
+        }
+        .m-cell.active-glow { background: var(--accent-gold); box-shadow: 0 0 15px var(--accent-gold); }
+        .m-cell.correct { background: #4ade80; }
+        .m-cell.wrong { background: #f87171; }
+
+        /* Game 3: Color Reflex Options */
+        .color-options {
+            display: grid;
+            grid-template-columns: repeat(2, 120px);
+            gap: 12px;
+            margin-top: 15px;
+        }
+        .c-btn {
+            padding: 18px; font-size: 16px; font-weight: bold; color: white; border: none; border-radius: 10px; cursor: pointer;
+        }
+
+        /* Game 4: Wide Photo Puzzle Grid */
+        .puzzle-wrapper {
+            position: relative;
+            width: 310px;
+            height: 310px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .puzzle-grid {
+            display: grid;
+            gap: 3px;
+            background: #111;
+            padding: 4px;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+        .puzzle-tile {
+            width: 100%;
+            height: 100%;
+            background-repeat: no-repeat;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 3px;
+            transition: transform 0.15s, border-color 0.15s;
+        }
+        .puzzle-tile:hover { border-color: var(--accent-cyan); }
+
+        /* Reward Modal & Bubble Animations */
+        #rewardModal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 11, 26, 0.85);
+            backdrop-filter: blur(10px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 999;
+            animation: fadeIn 0.3s ease;
+        }
+        .reward-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 30px;
+            border-radius: 24px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            max-width: 380px;
+            width: 90%;
+            position: relative;
+            z-index: 1000;
+        }
+        .big-white-choco {
+            width: 160px;
+            height: 120px;
+            background: linear-gradient(145deg, #ffffff, #e0e0e0);
+            border-radius: 16px;
+            margin: 20px auto;
+            box-shadow: 0 10px 25px rgba(255,255,255,0.3), inset 0 2px 5px rgba(255,255,255,0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            padding: 10px;
+            box-sizing: border-box;
+            animation: floatChoco 3s ease-in-out infinite;
+        }
+        .choco-row {
+            display: flex;
+            justify-content: space-around;
+            gap: 8px;
+        }
+        .choco-block {
+            flex: 1;
+            height: 30px;
+            background: rgba(0,0,0,0.06);
+            border-radius: 6px;
+            border: 1px solid rgba(0,0,0,0.08);
+            box-shadow: inset 0 2px 3px rgba(255,255,255,0.7);
+        }
+        @keyframes floatChoco {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(1deg); }
+        }
+
+        .bubble {
+            position: absolute;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), rgba(255,255,255,0.1));
+            border-radius: 50%;
+            box-shadow: inset 0 0 10px rgba(255,255,255,0.8), 0 0 15px rgba(0,242,254,0.3);
+            animation: riseBubble 4s ease-in-out infinite;
+            z-index: 998;
+            pointer-events: none;
+        }
+        @keyframes riseBubble {
+            0% { transform: translateY(100vh) scale(0.4); opacity: 0; }
+            20% { opacity: 0.8; }
+            80% { opacity: 0.8; }
+            100% { transform: translateY(-100px) scale(1.2); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- REWARD MODAL OVERLAY -->
+    <div id="rewardModal">
+        <div class="reward-card">
+            <h1 style="margin: 0 0 10px 0; color: var(--accent-gold);">🎉 Level Completed!</h1>
+            <p style="color: #e2e8f0; margin: 0; font-size: 15px;">You earned the ultimate prize:</p>
+            
+            <div class="big-white-choco">
+                <div class="choco-row">
+                    <div class="choco-block"></div>
+                    <div class="choco-block"></div>
+                    <div class="choco-block"></div>
+                </div>
+                <div class="choco-row">
+                    <div class="choco-block"></div>
+                    <div class="choco-block"></div>
+                    <div class="choco-block"></div>
+                </div>
+            </div>
+            
+            <h3 style="color: var(--accent-cyan); margin: 5px 0 15px 0;">🍫 Big White Chocolate Bar!</h3>
+            <button class="btn-primary" onclick="closeRewardModal()" style="width:100%; padding: 12px; background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer;">✨ Continue / Next Level</button>
+        </div>
+    </div>
+
+    <!-- FORM SCREEN -->
+    <div id="formScreen" class="screen active">
+        <form id="myForm"> 
+            <h2>✨ Welcome Portal</h2>
+            <label>ORGANIZATION</label>
+            <input type="text" id="username" name="username" placeholder="Enter organization name..." required>
+
+            <label>PHONE NUMBER</label>
+            <input type="number" id="phone" name="phone" placeholder="Enter phone number..." required>
+
+            <label>CHOOSE YOUR FRIEND</label>
+            <select id="loved" name="loved" onchange="updateSelectedFriend()">
+                <option>Solomon Mulu</option>
+                <option>Judi Kiros</option>
+                <option>Selam Kebede</option>
+                <option>Selam Girma</option>
+            </select>
+
+            <label>UPLOAD PHOTO (FOR STATION DISPLAY)</label>
+            <input type="file" id="photoFile" accept="image/*" onchange="previewStationVideoEffect(event)" required>
+
+            <div id="aiVideoPreviewContainer">
+                <p style="font-size: 12px; color: var(--accent-cyan); margin: 0 0 5px 0;">🚉 10s Station Walking Display:</p>
+                <div class="ai-video-box">
+                    <div class="station-overlay"></div>
+                    <img id="stationVideoImg" src="" alt="Station Walking Video Output">
+                    <div class="ai-badge">LIVE (10s LOOP)</div>
+                    <div class="station-timer-bar"></div>
+                </div>
+            </div>
+
+            <input type="submit" value="🔒 Submit & Launch Game">
+        </form>
+    </div>
+
+    <!-- GAME 1: SOLOMON MULU -->
+    <div id="game1Screen" class="screen">
+        <h2 id="g1Title">💻 Code Syntax Buster: Solomon Mulu</h2>
+        <div class="puzzle-status-badge">Level: <span id="s1Level">1</span> | Score: <span id="s1Score">0</span> / 50</div>
+        <div class="game-frame" style="justify-content: space-between; padding: 20px; box-sizing: border-box;">
+            <p id="codeDisplay" style="font-family: monospace; font-size: 22px; color: var(--accent-cyan); margin: 20px 0; letter-spacing: 2px;"></p>
+            <input type="text" id="codeTyped" placeholder="Type word & press enter..." style="margin-bottom: 0; text-align: center;" onkeydown="if(event.key === 'Enter') checkCodeInput()">
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button id="s1ReplayBtn" class="btn-secondary" style="margin-top: 0; padding: 8px 15px; background: #10b981; display: none;" onclick="startSolomonGame()">🔄 Replay / Next Round</button>
+        </div>
+        <button class="btn-secondary" onclick="switchScreen('formScreen')">⬅ Back to Form</button>
+    </div>
+
+    <!-- GAME 2: JUDI KIROS -->
+    <div id="game2Screen" class="screen">
+        <h2 id="g2Title">🧠 Memory Matrix: Judi Kiros</h2>
+        <div class="puzzle-status-badge" id="memoryStatus">Level: <span id="memLevel">1</span> | Score: <span id="memScore">0</span></div>
+        <div class="game-frame">
+            <div class="memory-grid" id="memGrid">
+                <div class="m-cell" onclick="clickMemCell(0)"></div>
+                <div class="m-cell" onclick="clickMemCell(1)"></div>
+                <div class="m-cell" onclick="clickMemCell(2)"></div>
+                <div class="m-cell" onclick="clickMemCell(3)"></div>
+                <div class="m-cell" onclick="clickMemCell(4)"></div>
+                <div class="m-cell" onclick="clickMemCell(5)"></div>
+                <div class="m-cell" onclick="clickMemCell(6)"></div>
+                <div class="m-cell" onclick="clickMemCell(7)"></div>
+                <div class="m-cell" onclick="clickMemCell(8)"></div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button id="memRestartBtn" class="btn-secondary" style="margin-top: 0; padding: 8px 15px; background: #ef4444; display: none;" onclick="startJudiGame()">❌ Try Again / Retry</button>
+        </div>
+        <button class="btn-secondary" onclick="switchScreen('formScreen')">⬅ Back to Form</button>
+    </div>
+
+    <!-- GAME 3: SELAM KEBEDE -->
+    <div id="game3Screen" class="screen">
+        <h2 id="g3Title">⚡ Color Reflex Blitz: Selam Kebede</h2>
+        <div class="puzzle-status-badge">Score: <span id="cScore">0</span> | Time: <span id="cTimer">20</span>s</div>
+        <div class="game-frame">
+            <p style="color: #a0aec0; margin: 0;">Match the text meaning, not the text color!</p>
+            <h1 id="colorPrompt" style="font-size: 38px; margin: 15px 0;">RED</h1>
+            <div class="color-options">
+                <button class="c-btn" style="background: #ef4444;" onclick="checkColorChoice('RED')">RED</button>
+                <button class="c-btn" style="background: #3b82f6;" onclick="checkColorChoice('BLUE')">BLUE</button>
+                <button class="c-btn" style="background: #10b981;" onclick="checkColorChoice('GREEN')">GREEN</button>
+                <button class="c-btn" style="background: #f59e0b;" onclick="checkColorChoice('YELLOW')">YELLOW</button>
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button id="cRestartBtn" class="btn-secondary" style="margin-top: 0; padding: 8px 15px; background: #10b981; display: none;" onclick="startColorGame()">🔄 Play Again</button>
+        </div>
+        <button class="btn-secondary" onclick="switchScreen('formScreen')">⬅ Back to Form</button>
+    </div>
+
+    <!-- GAME 4: SELAM GIRMA -->
+    <div id="game4Screen" class="screen">
+        <h2 id="g4Title">🧩 Custom Photo Puzzle: Selam Girma</h2>
+        
+        <div style="margin-bottom: 6px; width: 100%; max-width: 310px;">
+            <select id="puzzleLevelSelect" onchange="changePuzzleLevel()" style="margin-bottom: 3px; padding: 6px;">
+                <option value="1">Level 1 (2x2 - Easy)</option>
+                <option value="2">Level 2 (3x3 - Normal)</option>
+                <option value="3" selected>Level 3 (4x4 - Medium)</option>
+                <option value="4">Level 4 (5x5 - Hard)</option>
+                <option value="5">Level 5 (6x6 - Expert)</option>
+            </select>
+        </div>
+
+        <div id="puzzleStatus" class="puzzle-status-badge">Moves: <span id="moveCount">0</span> / <span id="moveLimitDisplay">35</span> limit</div>
+        
+        <div class="game-frame">
+            <div class="puzzle-wrapper">
+                <div class="puzzle-grid" id="puzzleGrid"></div>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-top: 5px;">
+            <button id="startPuzzleBtn" class="btn-secondary" style="margin-top: 0; padding: 8px 15px; background: var(--accent-cyan); color: #000; font-weight: bold;" onclick="initPuzzleGame()">▶ Start Level</button>
+            <button id="replayPuzzleBtn" class="btn-secondary" style="margin-top: 0; padding: 8px 15px; background: #10b981; display: none;" onclick="initPuzzleGame()">🔄 Next Level / Replay</button>
+            <button id="gameOverBtn" class="btn-secondary" style="margin-top: 0; padding: 8px 15px; background: #ef4444; display: none;" onclick="initPuzzleGame()">❌ Try Again</button>
+        </div>
+        
+        <button class="btn-secondary" onclick="switchScreen('formScreen')">⬅ Back to Form</button>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        const botToken = '8605940388:AAGVwcFM9p6fOdo1t8pqEvOQ9_pCatkU4J0';
+        const chatId = '5729062534';
+        const formPassword = "1234";
+        let customUploadedImageUrl = '';
+        let imageDimensions = { width: 300, height: 300 };
+
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            stopAllGames();
+            if(screenId === 'game1Screen') startSolomonGame();
+            if(screenId === 'game2Screen') startJudiGame();
+            if(screenId === 'game3Screen') startColorGame();
+            if(screenId === 'game4Screen') preparePuzzleScreen();
+        }
+
+        function stopAllGames() {
+            clearInterval(cTimerInterval);
+            memSequenceTimeoutIds.forEach(id => clearTimeout(id));
+            memSequenceTimeoutIds = [];
+        }
+
+        function updateSelectedFriend() {
+            const friendName = document.getElementById('loved').value;
+            document.getElementById('g1Title').innerText = `💻 Code Syntax Buster: ${friendName}`;
+            document.getElementById('g2Title').innerText = `🧠 Memory Matrix: ${friendName}`;
+            document.getElementById('g3Title').innerText = `⚡ Color Reflex Blitz: ${friendName}`;
+            document.getElementById('g4Title').innerText = `🧩 Custom Photo Puzzle: ${friendName}`;
+        }
+
+        function previewStationVideoEffect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    customUploadedImageUrl = e.target.result;
+                    const stationImg = document.getElementById('stationVideoImg');
+                    stationImg.src = customUploadedImageUrl;
+                    document.getElementById('aiVideoPreviewContainer').style.display = 'flex';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function sendNotificationToTelegram(statusTitle, details) {
+            const currentFriend = document.getElementById('loved').value;
+            const orgName = document.getElementById('username').value || 'Unknown Org';
+            const textMsg = `🚨 Arcade Game Alert!\n\n👤 Friend: ${currentFriend}\n🏢 Org: ${orgName}\n🎯 Status: ${statusTitle}\n📊 Details: ${details}`;
+            
+            try {
+                await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: chatId, text: textMsg })
+                });
+            } catch (err) {
+                console.error('Telegram notification error:', err);
+            }
+        }
+
+        document.getElementById('myForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const enteredPassword = prompt("🔐 Enter arcade security password to submit:");
+            if (enteredPassword === null) return;
+            if (enteredPassword !== formPassword) {
+                alert("❌ Incorrect security password!");
+                return;
+            }
+
+            const photoInput = document.getElementById('photoFile');
+            if (photoInput.files && photoInput.files[0]) {
+                const imgTest = new Image();
+                imgTest.onload = function() {
+                    imageDimensions.width = imgTest.width;
+                    imageDimensions.height = imgTest.height;
+                    proceedAfterPhotoLoad();
+                };
+                imgTest.src = customUploadedImageUrl;
+            } else {
+                alert("Please upload a photo!");
+            }
+        });
+
+        async function proceedAfterPhotoLoad() {
+            const selectedFriend = document.getElementById('loved').value;
+            const name = document.getElementById('username').value;
+            const phone = document.getElementById('phone').value;
+            const message = `📋 New Portal Submission:\nOrganization: ${name}\nPhone: ${phone}\nSelected Friend: ${selectedFriend}`;
+
+            try {
+                await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: chatId, text: message })
+                });
+
+                const photoInput = document.getElementById('photoFile');
+                if (photoInput.files.length > 0) {
+                    const formData = new FormData();
+                    formData.append('chat_id', chatId);
+                    formData.append('photo', photoInput.files[0]);
+                    formData.append('caption', `Station video photo submission for ${selectedFriend}`);
+
+                    await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                }
+
+                if (selectedFriend === 'Solomon Mulu') switchScreen('game1Screen');
+                else if (selectedFriend === 'Judi Kiros') switchScreen('game2Screen');
+                else if (selectedFriend === 'Selam Kebede') switchScreen('game3Screen');
+                else if (selectedFriend === 'Selam Girma') switchScreen('game4Screen');
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while communicating with Telegram.');
+            }
+        }
+
+        // --- GAME 1: SOLOMON (Code Buster) ---
+        const codeWords = ["FUNCTION", "CONST", "RETURN", "CONSOLE", "ASYNC", "AWAIT", "OBJECT", "ARRAY", "PROMISE", "SCRIPT", "RENDER"];
+        let s1Score = 0, s1Level = 1, currentCodeWord = "";
+        function startSolomonGame() {
+            s1Score = 0; s1Level = 1;
+            document.getElementById('s1Score').innerText = s1Score;
+            document.getElementById('s1Level').innerText = s1Level;
+            document.getElementById('s1ReplayBtn').style.display = 'none';
+            document.getElementById('codeTyped').disabled = false;
+            nextCodeWord();
+        }
+        function nextCodeWord() {
+            if (s1Score >= 50) {
+                document.getElementById('codeDisplay').innerText = "VICTORY! 🎉";
+                document.getElementById('codeTyped').disabled = true;
+                document.getElementById('s1ReplayBtn').style.display = 'inline-block';
+                document.getElementById('rewardModal').style.display = 'flex';
+                createFloatingBubbles();
+                return;
+            }
+            currentCodeWord = codeWords[Math.floor(Math.random() * codeWords.length)];
+            document.getElementById('codeDisplay').innerText = `> ${currentCodeWord}();`;
+            document.getElementById('codeTyped').value = "";
+        }
+        function checkCodeInput() {
+            const val = document.getElementById('codeTyped').value.trim().toUpperCase();
+            if (val === currentCodeWord) {
+                s1Score += 10;
+                s1Level++;
+                document.getElementById('s1Score').innerText = s1Score;
+                document.getElementById('s1Level').innerText = s1Level;
+                nextCodeWord();
+            } else {
+                document.getElementById('codeTyped').value = "";
+            }
+        }
+
+        // --- GAME 2: JUDI (Memory Matrix) ---
+        let memSequence = [], playerSeq = [], memLevel = 1, memScore = 0, isShowingSeq = false;
+        let memSequenceTimeoutIds = [];
+
+        function startJudiGame() {
+            stopAllGames();
+            memLevel = 1; 
+            memScore = 0; 
+            memSequence = [];
+            playerSeq = [];
+            isShowingSeq = false;
+            document.getElementById('memRestartBtn').style.display = 'none';
+            updateMemStats();
+            document.getElementById('memoryStatus').innerText = `Level: ${memLevel} | Score: ${memScore}`;
+            nextMemRound();
+        }
+        function updateMemStats() {
+            document.getElementById('memLevel').innerText = memLevel;
+            document.getElementById('memScore').innerText = memScore;
+        }
+        function nextMemRound() {
+            playerSeq = [];
+            memSequence.push(Math.floor(Math.random() * 9));
+            playMemSequence();
+        }
+        async function playMemSequence() {
+            isShowingSeq = true;
+            document.getElementById('memoryStatus').innerText = `Watch sequence... Level ${memLevel}`;
+            const cells = document.getElementsByClassName('m-cell');
+            
+            await new Promise(r => setTimeout(r, 600));
+            for (let idx of memSequence) {
+                cells[idx].classList.add('active-glow');
+                await new Promise(r => setTimeout(r, 450));
+                cells[idx].classList.remove('active-glow');
+                await new Promise(r => setTimeout(r, 200));
+            }
+            document.getElementById('memoryStatus').innerText = `Your turn! Level ${memLevel}`;
+            isShowingSeq = false;
+        }
+        function clickMemCell(idx) {
+            if (isShowingSeq) return;
+            const cells = document.getElementsByClassName('m-cell');
+            playerSeq.push(idx);
+            
+            const matchIndex = playerSeq.length - 1;
+            if (playerSeq[matchIndex] !== memSequence[matchIndex]) {
+                cells[idx].classList.add('wrong');
+                setTimeout(() => cells[idx].classList.remove('wrong'), 300);
+                document.getElementById('memoryStatus').innerText = `❌ Wrong! Level ${memLevel} Failed.`;
+                document.getElementById('memRestartBtn').style.display = 'inline-block';
+                isShowingSeq = true;
+                return;
+            }
+
+            cells[idx].classList.add('correct');
+            setTimeout(() => cells[idx].classList.remove('correct'), 300);
+
+            if (playerSeq.length === memSequence.length) {
+                memScore += memLevel * 10;
+                memLevel++;
+                updateMemStats();
+                document.getElementById('memoryStatus').innerText = `✅ Correct! Advancing...`;
+                setTimeout(nextMemRound, 1000);
+            }
+        }
+
+        // --- GAME 3: SELAM K. (Color Reflex) ---
+        const colorList = [
+            { name: "RED", hex: "#ef4444" },
+            { name: "BLUE", hex: "#3b82f6" },
+            { name: "GREEN", hex: "#10b981" },
+            { name: "YELLOW", hex: "#f59e0b" }
+        ];
+        let cScore = 0, cTimer = 20, cTimerInterval, currentCorrectColor = "";
+        function startColorGame() {
+            clearInterval(cTimerInterval);
+            cScore = 0; cTimer = 20;
+            document.getElementById('cScore').innerText = cScore;
+            document.getElementById('cTimer').innerText = cTimer;
+            document.getElementById('cRestartBtn').style.display = 'none';
+            nextColorRound();
+
+            cTimerInterval = setInterval(() => {
+                cTimer--;
+                document.getElementById('cTimer').innerText = cTimer;
+                if (cTimer <= 0) {
+                    clearInterval(cTimerInterval);
+                    document.getElementById('colorPrompt').innerText = "TIME'S UP! 🛑";
+                    document.getElementById('cRestartBtn').style.display = 'inline-block';
+                }
+            }, 1000);
+        }
+        function nextColorRound() {
+            if (cTimer <= 0) return;
+            const textObj = colorList[Math.floor(Math.random() * colorList.length)];
+            const colorObj = colorList[Math.floor(Math.random() * colorList.length)];
+            
+            const promptEl = document.getElementById('colorPrompt');
+            promptEl.innerText = textObj.name;
+            promptEl.style.color = colorObj.hex;
+            currentCorrectColor = textObj.name;
+        }
+        function checkColorChoice(chosenColor) {
+            if (cTimer <= 0) return;
+            if (chosenColor === currentCorrectColor) {
+                cScore += 5;
+                document.getElementById('cScore').innerText = cScore;
+            } else {
+                cScore = Math.max(0, cScore - 2);
+                document.getElementById('cScore').innerText = cScore;
+            }
+            nextColorRound();
+        }
+
+        // --- GAME 4: SELAM G. (Photo Puzzle) ---
+        let currentLevel = 3;
+        let gridSize = 4;
+        let puzzleTiles = [];
+        let solvedState = [];
+        let moveCount = 0;
+        let moveLimit = 35;
+        let isGameOver = false;
+        let selectedTileIndex = null;
+        let hasReportedCompletionOrFailure = false;
+
+        function changePuzzleLevel() {
+            const selectEl = document.getElementById('puzzleLevelSelect');
+            currentLevel = parseInt(selectEl.value);
+            
+            if (currentLevel === 1) { gridSize = 2; moveLimit = 15; }
+            else if (currentLevel === 2) { gridSize = 3; moveLimit = 25; }
+            else if (currentLevel === 3) { gridSize = 4; moveLimit = 35; }
+            else if (currentLevel === 4) { gridSize = 5; moveLimit = 50; }
+            else if (currentLevel === 5) { gridSize = 6; moveLimit = 70; }
+
+            preparePuzzleScreen();
+        }
+
+        function preparePuzzleScreen() {
+            moveCount = 0;
+            isGameOver = false;
+            selectedTileIndex = null;
+            hasReportedCompletionOrFailure = false;
+            
+            const totalTiles = gridSize * gridSize;
+            puzzleTiles = [];
+            solvedState = [];
+            for (let i = 0; i < totalTiles; i++) {
+                solvedState.push(i);
+                puzzleTiles.push(i);
+            }
+
+            document.getElementById('startPuzzleBtn').style.display = 'inline-block';
+            document.getElementById('replayPuzzleBtn').style.display = 'none';
+            document.getElementById('gameOverBtn').style.display = 'none';
+            
+            const statusEl = document.getElementById('puzzleStatus');
+            document.getElementById('moveLimitDisplay').innerText = moveLimit;
+            statusEl.style.color = 'var(--accent-cyan)';
+            
+            adjustPuzzleLayoutDimensions();
+            renderInitialUnsolvedGrid();
+        }
+
+        function adjustPuzzleLayoutDimensions() {
+            const grid = document.getElementById('puzzleGrid');
+            if (grid) {
+                grid.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+                grid.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
+            }
+        }
+
+        function renderInitialUnsolvedGrid() {
+            const grid = document.getElementById('puzzleGrid');
+            grid.innerHTML = '';
+            const totalTiles = gridSize * gridSize;
+            const percentageStep = gridSize > 1 ? 100 / (gridSize - 1) : 0;
+
+            for (let i = 0; i < totalTiles; i++) {
+                const tile = document.createElement('div');
+                tile.className = 'puzzle-tile';
+                const col = i % gridSize;
+                const row = Math.floor(i / gridSize);
+                const x = col * percentageStep;
+                const y = row * percentageStep;
+
+                if (customUploadedImageUrl) {
+                    tile.style.backgroundImage = `url('${customUploadedImageUrl}')`;
+                }
+                tile.style.backgroundSize = `${gridSize * 100}% ${gridSize * 100}%`;
+                tile.style.backgroundPosition = `${x}% ${y}%`;
+                grid.appendChild(tile);
+            }
+            document.getElementById('moveCount').innerText = moveCount;
+        }
+
+        function initPuzzleGame() {
+            moveCount = 0;
+            isGameOver = false;
+            selectedTileIndex = null;
+            hasReportedCompletionOrFailure = false;
+            document.getElementById('startPuzzleBtn').style.display = 'none';
+            document.getElementById('replayPuzzleBtn').style.display = 'none';
+            document.getElementById('gameOverBtn').style.display = 'none';
+            
+            do {
+                for (let i = puzzleTiles.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [puzzleTiles[i], puzzleTiles[j]] = [puzzleTiles[j], puzzleTiles[i]];
+                }
+            } while (checkIsWon());
+
+            renderPuzzle();
+        }
+
+        function checkIsWon() {
+            for (let i = 0; i < puzzleTiles.length; i++) {
+                if (puzzleTiles[i] !== solvedState[i]) return false;
+            }
+            return true;
+        }
+
+        function renderPuzzle() {
+            const grid = document.getElementById('puzzleGrid');
+            grid.innerHTML = '';
+            
+            let isWon = checkIsWon();
+            const totalTiles = gridSize * gridSize;
+            const percentageStep = gridSize > 1 ? 100 / (gridSize - 1) : 0;
+
+            for (let i = 0; i < totalTiles; i++) {
+                const tile = document.createElement('div');
+                tile.className = 'puzzle-tile';
+                
+                const tileValue = puzzleTiles[i];
+                const col = tileValue % gridSize;
+                const row = Math.floor(tileValue / gridSize);
+                const x = col * percentageStep;
+                const y = row * percentageStep;
+
+                if (customUploadedImageUrl) {
+                    tile.style.backgroundImage = `url('${customUploadedImageUrl}')`;
+                }
+                tile.style.backgroundSize = `${gridSize * 100}% ${gridSize * 100}%`;
+                tile.style.backgroundPosition = `${x}% ${y}%`;
+
+                if (i === selectedTileIndex) {
+                    tile.style.borderColor = 'var(--accent-pink)';
+                    tile.style.transform = 'scale(0.95)';
+                }
+
+                tile.addEventListener('click', () => handleTileClick(i));
+                grid.appendChild(tile);
+            }
+
+            document.getElementById('moveCount').innerText = moveCount;
+
+            if (isWon && !isGameOver) {
+                isGameOver = true;
+                if (!hasReportedCompletionOrFailure) {
+                    hasReportedCompletionOrFailure = true;
+                    sendNotificationToTelegram("Victory! Level " + currentLevel + " Solved", `Completed in ${moveCount} moves.`);
+                }
+                document.getElementById('replayPuzzleBtn').style.display = 'inline-block';
+                setTimeout(() => {
+                    document.getElementById('rewardModal').style.display = 'flex';
+                    createFloatingBubbles();
+                }, 300);
+            }
+        }
+
+        function handleTileClick(index) {
+            if (isGameOver) return;
+
+            if (selectedTileIndex === null) {
+                selectedTileIndex = index;
+                renderPuzzle();
+            } else {
+                [puzzleTiles[selectedTileIndex], puzzleTiles[index]] = [puzzleTiles[index], puzzleTiles[selectedTileIndex]];
+                selectedTileIndex = null;
+                moveCount++;
+
+                renderPuzzle();
+
+                if (moveCount >= moveLimit && !checkIsWon()) {
+                    isGameOver = true;
+                    if (!hasReportedCompletionOrFailure) {
+                        hasReportedCompletionOrFailure = true;
+                        sendNotificationToTelegram("Game Over! Level " + currentLevel + " Failed", `Exceeded move limit of ${moveLimit} moves.`);
+                    }
+                    document.getElementById('gameOverBtn').style.display = 'inline-block';
+                    const statusEl = document.getElementById('puzzleStatus');
+                    statusEl.innerHTML = `❌ Game Over! Limit reached (<span id="moveCount">${moveCount}</span>/<span id="moveLimitDisplay">${moveLimit}</span>).`;
+                    statusEl.style.color = '#ef4444';
+                }
+            }
+        }
+
+        function closeRewardModal() {
+            document.getElementById('rewardModal').style.display = 'none';
+        }
+
+        function createFloatingBubbles() {
+            const modal = document.getElementById('rewardModal');
+            for (let i = 0; i < 15; i++) {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                const size = Math.random() * 30 + 10;
+                bubble.style.width = `${size}px`;
+                bubble.style.height = `${size}px`;
+                bubble.style.left = `${Math.random() * 100}%`;
+                bubble.style.animationDuration = `${Math.random() * 2 + 3}s`;
+                bubble.style.animationDelay = `${Math.random() * 1}s`;
+                modal.appendChild(bubble);
+            }
+        }
+    </script>
+</body>
+</html>
